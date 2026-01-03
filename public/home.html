@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DivisionRollNoProject - Home</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 16px;
+        background-color: #fafafa;
+      }
+      h2 {
+        text-align: center;
+        color: #333;
+      }
+      .controls {
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      button {
+        margin: 5px;
+        padding: 8px 14px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      select {
+        padding: 6px;
+        margin-left: 6px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+      th {
+        background: #f2f2f2;
+      }
+      #stats {
+        margin-top: 15px;
+        font-weight: bold;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>DivisionRollNoProject - Home</h2>
+
+    <div class="controls">
+      <button id="btnLoad">Load All</button>
+      <button id="btnRecompute">Recompute % (day1..day4 avg)</button>
+      <button id="btnStats">Show Stats</button>
+      <label>Sort by:
+        <select id="sortBy">
+          <option value="percentage">Percentage</option>
+          <option value="name">Name</option>
+        </select>
+      </label>
+      <label>Order:
+        <select id="order">
+          <option value="desc">Descending</option>
+          <option value="asc">Ascending</option>
+        </select>
+      </label>
+      <button id="btnSort">Sort</button>
+    </div>
+
+    <div id="stats"></div>
+
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Day 1</th>
+          <th>Day 2</th>
+          <th>Day 3</th>
+          <th>Day 4</th>
+          <th>Percentage</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      // Load all records
+      async function loadAll() {
+        const res = await fetch('/api/students');
+        const data = await res.json();
+        renderTable(data);
+      }
+
+      // Render table
+      function renderTable(list) {
+        const tbody = document.querySelector('#table tbody');
+        tbody.innerHTML = '';
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="7">No data found</td></tr>';
+          return;
+        }
+        list.forEach((r) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${r.rollno}</td>
+            <td>${r.name}</td>
+            <td>${r.day1}</td>
+            <td>${r.day2}</td>
+            <td>${r.day3}</td>
+            <td>${r.day4}</td>
+            <td>${r.percentage}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Recompute percentages
+      async function recompute() {
+        const res = await fetch('/api/recompute', { method: 'POST' });
+        const j = await res.json();
+        alert('Recomputed successfully!');
+        await loadAll();
+      }
+
+      // Show statistics
+      async function showStats() {
+        const res = await fetch('/api/stats');
+        const j = await res.json();
+        const el = document.getElementById('stats');
+        el.innerHTML = `Total: ${j.count} | Max: ${j.max}% | Min: ${j.min}% | Average: ${j.avg}%`;
+      }
+
+      // Sort data
+      async function sortAndLoad() {
+        const by = document.getElementById('sortBy').value;
+        const order = document.getElementById('order').value;
+        const res = await fetch(`/api/sorted?by=${by}&order=${order}`);
+        const data = await res.json();
+        renderTable(data);
+      }
+
+      // Event listeners
+      document.getElementById('btnLoad').addEventListener('click', loadAll);
+      document.getElementById('btnRecompute').addEventListener('click', recompute);
+      document.getElementById('btnStats').addEventListener('click', showStats);
+      document.getElementById('btnSort').addEventListener('click', sortAndLoad);
+
+      // Auto load when page opens
+      loadAll();
+    </script>
+  </body>
+</html>
